@@ -6,3 +6,11 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+.cache/
+
+# Keep Lambda Sub Project
+!lambda/*.js
+
+# IDE Files
+.idea/
+.vscode/

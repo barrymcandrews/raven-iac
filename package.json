@@ -11,7 +11,9 @@
     "cdk": "cdk"
   },
   "devDependencies": {
-    "@aws-cdk/assert": "1.27.0",
+    "@aws-cdk/assert": "^1.30.0",
+    "@aws-cdk/cx-api": "^1.30.0",
+    "@aws-cdk/region-info": "^1.30.0",
     "@types/jest": "^24.0.22",
     "@types/node": "10.17.5",
     "jest": "^24.9.0",
@@ -21,7 +23,21 @@
     "typescript": "~3.7.2"
   },
   "dependencies": {
-    "@aws-cdk/core": "1.27.0",
-    "source-map-support": "^0.5.16"
+    "@aws-cdk/aws-apigateway": "^1.30.0",
+    "@aws-cdk/aws-cognito": "^1.30.0",
+    "@aws-cdk/aws-dynamodb": "^1.30.0",
+    "@aws-cdk/aws-lambda-nodejs": "^1.30.0",
+    "@aws-cdk/aws-s3": "^1.30.0",
+    "@aws-cdk/core": "^1.30.0",
+    "@aws/dynamodb-data-mapper": "^0.7.3",
+    "@aws/dynamodb-data-mapper-annotations": "^0.7.3",
+    "@types/uuid": "^7.0.2",
+    "aws-lambda-router": "^0.8.2",
+    "aws-sdk": "^2.643.0",
+    "dynamoose": "^1.11.1",
+    "lambda-api": "^0.10.5",
+    "parcel-bundler": "^1.12.4",
+    "source-map-support": "^0.5.16",
+    "uuid": "^7.0.2"
   }
 }

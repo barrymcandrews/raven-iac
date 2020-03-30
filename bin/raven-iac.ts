@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
-import { RavenIacStack } from '../lib/raven-iac-stack';
+import { RavenStack } from '../lib/raven-stack';
 
 const app = new cdk.App();
-new RavenIacStack(app, 'RavenIacStack');
+new RavenStack(app, 'RavenStack', {
+  env: {region: 'us-east-1'},
+  stage: app.node.tryGetContext('stage'),
+});
