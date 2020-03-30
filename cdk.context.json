@@ -1,5 +1,4 @@
 {
   "@aws-cdk/core:enableStackNameDuplicates": "true",
-  "aws-cdk:enableDiffNoFail": "true",
-  "stage": "Prod"
+  "aws-cdk:enableDiffNoFail": "true"
 }
