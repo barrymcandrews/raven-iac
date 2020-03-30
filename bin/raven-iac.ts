@@ -6,5 +6,4 @@ import { RavenStack } from '../lib/raven-stack';
 const app = new cdk.App();
 new RavenStack(app, 'RavenStack', {
   env: {region: 'us-east-1'},
-  stage: app.node.tryGetContext('stage'),
 });
