@@ -12,7 +12,12 @@ const endpoint = process.env.AWS_SAM_LOCAL ? 'http://localhost:8000' : undefined
 const api = API({version: 'v1.0.0', base: 'v1'});
 const dynamoDB = new DynamoDB({endpoint: endpoint});
 
-api.get('/rooms', async () => {
+api.use((req, res, next) => {
+  res.cors({});
+  next();
+});
+
+api.get('/rooms', async (req) => {
   console.log('hello');
   let result = await dynamoDB.scan({TableName: ROOMS_TABLE_NAME}).promise();
   return result.Items!.map(Room.fromItem);
@@ -22,7 +27,7 @@ api.post('/rooms', async (req, resp) => {
   let room = new Room({
     name: req.body.name,
     id: uuidv5(req.body.name, UUID_NAMESPACE),
-    creatorId: req.requestContext.authorizer!.claims.client_id
+    creator: req.requestContext.authorizer!.claims['cognito:username']
   });
 
   try {
@@ -54,6 +59,20 @@ api.get('/rooms/:name', async (req) => {
         id: {S: id},
       }
     }).promise()).Item);
+});
+
+api.delete('/rooms/:name', async (req) => {
+  let id = uuidv5(req.params.name!, UUID_NAMESPACE);
+  try {
+    await dynamoDB.deleteItem({
+      TableName: ROOMS_TABLE_NAME,
+      Key: {id: {S: id},}
+    }).promise();
+    return {status: "deleted"}
+  } catch (e) {
+    return e
+  }
+
 });
 
 export async function handler(event: any, context: any){

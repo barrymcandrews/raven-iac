@@ -2,7 +2,7 @@
 export class Room {
   public id: string;
   public name?: string;
-  public creatorId?: string;
+  public creator?: string;
 
   constructor(props: RoomProps) {
     Object.assign(this, props);
@@ -12,7 +12,7 @@ export class Room {
     return new Room({
         id: item.id.S,
         name: item.name.S,
-        creatorId: item.creatorId.S,
+        creator: item.creator.S,
       }
     );
   }
@@ -21,7 +21,7 @@ export class Room {
     return{
       id: {S: this.id},
       name: {S: this.name},
-      creatorId: {S: this.creatorId},
+      creator: {S: this.creator},
     }
   }
 }
@@ -29,5 +29,5 @@ export class Room {
 export interface RoomProps {
   id: string;
   name?: string;
-  creatorId?: string;
+  creator?: string;
 }

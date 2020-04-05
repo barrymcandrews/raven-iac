@@ -4,10 +4,9 @@ import {
   CfnUserPoolClient,
   CfnUserPoolDomain,
   CfnUserPoolGroup,
-  CfnUserPoolResourceServer,
   UserPool,
 } from '@aws-cdk/aws-cognito';
-import {AuthorizationType, CfnAuthorizer, LambdaRestApi, MethodOptions} from "@aws-cdk/aws-apigateway";
+import {AuthorizationType, CfnAuthorizer, Cors, LambdaRestApi, MethodOptions} from "@aws-cdk/aws-apigateway";
 import {NodejsFunction} from "@aws-cdk/aws-lambda-nodejs";
 
 
@@ -43,30 +42,19 @@ export class RavenStack extends cdk.Stack {
       userPoolId: ravenUserPool.userPoolId
     });
 
-    const cfnUserPoolResourceServer = new CfnUserPoolResourceServer(this, 'ResourceServer', {
-      identifier: 'raven/api',
-      name: 'RavenResourceServer',
-      userPoolId: ravenUserPool.userPoolId,
-      scopes: [{
-        scopeName: 'all',
-        scopeDescription: 'api access',
-      }]
-    });
-
-    const cfnUserPoolClient = new CfnUserPoolClient(this, "CognitoAppClient", {
+    const ravenUserPoolClient = new CfnUserPoolClient(this, "CognitoAppClient", {
       supportedIdentityProviders: ['COGNITO'],
       clientName: "Web",
       allowedOAuthFlowsUserPoolClient: true,
       allowedOAuthFlows: ["code"],
-      allowedOAuthScopes: ["phone", "email", "openid", "profile", "raven/api/all"],
+      allowedOAuthScopes: ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"],
       refreshTokenValidity: 1,
       callbackUrLs: ['https://raven.bmcandrews.com/auth/callback'],
       logoutUrLs: ['https://raven.bmcandrews.com/logout'],
       userPoolId: ravenUserPool.userPoolId,
       preventUserExistenceErrors: 'ENABLED',
+      generateSecret: false,
     });
-    cfnUserPoolClient.addDependsOn(cfnUserPoolResourceServer);
-
 
     // API Gateway
     const apiFunction = new NodejsFunction(this, 'apiFunction', {
@@ -82,7 +70,12 @@ export class RavenStack extends cdk.Stack {
 
     const api = new LambdaRestApi(this, 'RavenApi', {
       handler: apiFunction,
-      proxy: false
+      proxy: false,
+      defaultCorsPreflightOptions: {
+        allowOrigins: Cors.ALL_ORIGINS,
+        allowMethods: Cors.ALL_METHODS,
+        statusCode: 200,
+      }
     });
 
     const authorizer = new CfnAuthorizer(this, 'cfnAuth', {
@@ -97,8 +90,7 @@ export class RavenStack extends cdk.Stack {
       authorizationType: AuthorizationType.COGNITO,
       authorizer: {
         authorizerId: authorizer.ref
-      },
-      authorizationScopes: ['raven/api/all'],
+      }
     };
 
 
