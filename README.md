@@ -10,9 +10,13 @@ This project contains the AWS infrastructure for my Raven Messenger Demo.
 ## About The Project
 Raven Messenger is a fictional serverless chat application developed as an example. It uses API Gateway, Cognito, Lambda and DynamoDB to form an extremely cost-effective REST API that scales out as users grow. The REST API is consumed by my [React Frontend](https://github.com/barrymcandrews/raven-react) which I have hosted in a seperate repository.
 
-
 ### Built With [AWS CDK](https://github.com/aws/aws-cdk)
 The [AWS CDK](https://github.com/aws/aws-cdk) (Cloud Development Kit) is an open-source development framework for generating CloudFormation templates using high level abstractions. With it you can define a lot of infrastructue using only a few lines of code. This framework doen't solve all the current problems with Infrastructure as Code. But after using this framework for awhile, I really believe it's the future of IaC.
+
+### Infrastructure
+<p align="center">
+  <img src="https://files.bmcandrews.com/raven-diagram.svg">
+</p>
 
 
 <!-- GETTING STARTED -->
