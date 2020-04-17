@@ -56,6 +56,7 @@ export class RavenStack extends cdk.Stack {
       generateSecret: false,
     });
 
+
     // Rest API
     const apiFunction = new NodejsFunction(this, 'apiFunction', {
       entry: 'functions/RestApiFunction/api.ts',
@@ -93,7 +94,6 @@ export class RavenStack extends cdk.Stack {
       }
     };
 
-
     // API Definition
     // /v1
     const version = api.root.addResource('v1');
@@ -112,6 +112,7 @@ export class RavenStack extends cdk.Stack {
     const  messages = room.addResource('messages');
     messages.addMethod('GET', undefined, methodOptions);
     messages.addMethod('POST', undefined, methodOptions);
+
 
     // Websocket API
     const websocketFunction = new NodejsFunction(this, 'websocketFunction', {
