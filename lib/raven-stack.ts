@@ -56,9 +56,9 @@ export class RavenStack extends cdk.Stack {
       generateSecret: false,
     });
 
-    // API Gateway
+    // Rest API
     const apiFunction = new NodejsFunction(this, 'apiFunction', {
-      entry: 'lambda/api.ts',
+      entry: 'functions/RestApiFunction/api.ts',
       handler: 'handler',
       environment: {
         ROOMS_TABLE_NAME: roomsTable.tableName,
@@ -112,5 +112,15 @@ export class RavenStack extends cdk.Stack {
     const  messages = room.addResource('messages');
     messages.addMethod('GET', undefined, methodOptions);
     messages.addMethod('POST', undefined, methodOptions);
+
+    // Websocket API
+    const websocketFunction = new NodejsFunction(this, 'websocketFunction', {
+      entry: 'functions/WebsocketFunction/handler.ts',
+      handler: 'handler',
+      environment: {
+        ROOMS_TABLE_NAME: roomsTable.tableName,
+        MESSAGES_TABLE_NAME: messagesTable.tableName,
+      }
+    });
   }
 }
