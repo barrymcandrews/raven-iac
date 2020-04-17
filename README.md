@@ -1,12 +1,5 @@
 # Raven Messenger - AWS Infrastructure
 
-<p align="center">
-  <a href="https://github.com/barrymcandrews/raven-react">🖼️ React Frontend</a>
-  <span>&#8195; &#8226; &#8195;</span>
-  <a href="https://raven.bmcandrews.com">🚀 Live Demo</a>
-</p>
-
-
 🖼️ [React Frontend](https://github.com/barrymcandrews/raven-react)
 
 🚀 [Live Demo](https://raven.bmcandrews.com)
