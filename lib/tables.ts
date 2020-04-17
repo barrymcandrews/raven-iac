@@ -1,5 +1,5 @@
-import {AttributeType, Table} from "@aws-cdk/aws-dynamodb";
-import {Construct, RemovalPolicy} from "@aws-cdk/core";
+import {AttributeType, Table} from '@aws-cdk/aws-dynamodb';
+import {Construct, RemovalPolicy} from '@aws-cdk/core';
 
 export class RoomsTable extends Table {
   constructor(scope: Construct, id: string) {

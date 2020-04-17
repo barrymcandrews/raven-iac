@@ -1,13 +1,13 @@
 import * as cdk from '@aws-cdk/core';
-import {MessagesTable, RoomsTable} from "./tables";
+import {MessagesTable, RoomsTable} from './tables';
 import {
   CfnUserPoolClient,
   CfnUserPoolDomain,
   CfnUserPoolGroup,
   UserPool,
 } from '@aws-cdk/aws-cognito';
-import {AuthorizationType, CfnAuthorizer, Cors, LambdaRestApi, MethodOptions} from "@aws-cdk/aws-apigateway";
-import {NodejsFunction} from "@aws-cdk/aws-lambda-nodejs";
+import {AuthorizationType, CfnAuthorizer, Cors, LambdaRestApi, MethodOptions} from '@aws-cdk/aws-apigateway';
+import {NodejsFunction} from '@aws-cdk/aws-lambda-nodejs';
 
 
 export class RavenStack extends cdk.Stack {
@@ -19,35 +19,35 @@ export class RavenStack extends cdk.Stack {
 
 
     // Cognito
-    const ravenUserPool = new UserPool(this, "RavenUserPool", {
+    const ravenUserPool = new UserPool(this, 'RavenUserPool', {
       selfSignUpEnabled: true,
       signInAliases: {
         username: true,
       },
     });
 
-    new CfnUserPoolGroup(this, "AdminsGroup", {
+    new CfnUserPoolGroup(this, 'AdminsGroup', {
       groupName: 'raven-admins',
       userPoolId: ravenUserPool.userPoolId,
 
     });
 
-    new CfnUserPoolGroup(this, "UsersGroup", {
+    new CfnUserPoolGroup(this, 'UsersGroup', {
       groupName: 'raven-users',
       userPoolId: ravenUserPool.userPoolId,
     });
 
-    const cfnUserPoolDomain = new CfnUserPoolDomain(this, "RavenUserPoolCognitoDomain", {
+    const cfnUserPoolDomain = new CfnUserPoolDomain(this, 'RavenUserPoolCognitoDomain', {
       domain: 'raven-users-bmcandrews',
       userPoolId: ravenUserPool.userPoolId
     });
 
-    const ravenUserPoolClient = new CfnUserPoolClient(this, "CognitoAppClient", {
+    const ravenUserPoolClient = new CfnUserPoolClient(this, 'CognitoAppClient', {
       supportedIdentityProviders: ['COGNITO'],
-      clientName: "Web",
+      clientName: 'Web',
       allowedOAuthFlowsUserPoolClient: true,
-      allowedOAuthFlows: ["code"],
-      allowedOAuthScopes: ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"],
+      allowedOAuthFlows: ['code'],
+      allowedOAuthScopes: ['phone', 'email', 'openid', 'profile', 'aws.cognito.signin.user.admin'],
       refreshTokenValidity: 1,
       callbackUrLs: ['https://raven.bmcandrews.com/auth/callback'],
       logoutUrLs: ['https://raven.bmcandrews.com/logout'],
@@ -100,8 +100,8 @@ export class RavenStack extends cdk.Stack {
 
     // /v1/rooms
     const rooms = version.addResource('rooms');
-    rooms.addMethod("GET", undefined, methodOptions);
-    rooms.addMethod("POST", undefined, methodOptions);
+    rooms.addMethod('GET', undefined, methodOptions);
+    rooms.addMethod('POST', undefined, methodOptions);
 
     // /v1/rooms/{id}
     const room = rooms.addResource('{room_id}');

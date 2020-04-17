@@ -1,7 +1,7 @@
 import API from 'lambda-api';
 import {DynamoDB} from 'aws-sdk';
 import {v5 as uuidv5} from 'uuid';
-import {Room} from "./models";
+import {Room} from './models';
 
 const UUID_NAMESPACE = '031548bd-10e5-460f-89d4-915896e06f65';
 const ROOMS_TABLE_NAME = process.env.ROOMS_TABLE_NAME!;
@@ -19,12 +19,12 @@ api.use((req, res, next) => {
 
 api.get('/rooms', async (req) => {
   console.log('hello');
-  let result = await dynamoDB.scan({TableName: ROOMS_TABLE_NAME}).promise();
+  const result = await dynamoDB.scan({TableName: ROOMS_TABLE_NAME}).promise();
   return result.Items!.map(Room.fromItem);
 });
 
 api.post('/rooms', async (req, resp) => {
-  let room = new Room({
+  const room = new Room({
     name: req.body.name,
     id: uuidv5(req.body.name, UUID_NAMESPACE),
     creator: req.requestContext.authorizer!.claims['cognito:username']
@@ -52,7 +52,7 @@ api.post('/rooms', async (req, resp) => {
 });
 
 api.get('/rooms/:name', async (req) => {
-    let id = uuidv5(req.params.name!, UUID_NAMESPACE);
+    const id = uuidv5(req.params.name!, UUID_NAMESPACE);
     return Room.fromItem((await dynamoDB.getItem({
       TableName: ROOMS_TABLE_NAME,
       Key: {
@@ -62,13 +62,13 @@ api.get('/rooms/:name', async (req) => {
 });
 
 api.delete('/rooms/:name', async (req) => {
-  let id = uuidv5(req.params.name!, UUID_NAMESPACE);
+  const id = uuidv5(req.params.name!, UUID_NAMESPACE);
   try {
     await dynamoDB.deleteItem({
       TableName: ROOMS_TABLE_NAME,
       Key: {id: {S: id},}
     }).promise();
-    return {status: "deleted"}
+    return {status: 'deleted'}
   } catch (e) {
     return e
   }
