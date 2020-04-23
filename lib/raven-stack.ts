@@ -1,48 +1,57 @@
 import * as cdk from '@aws-cdk/core';
+import {CfnOutput, StackProps} from '@aws-cdk/core';
 import {MessagesTable, RoomsTable} from './tables';
 import {
   CfnUserPoolClient,
   CfnUserPoolDomain,
   CfnUserPoolGroup,
   UserPool,
+  VerificationEmailStyle,
 } from '@aws-cdk/aws-cognito';
 import {AuthorizationType, CfnAuthorizer, Cors, LambdaRestApi, MethodOptions} from '@aws-cdk/aws-apigateway';
 import {NodejsFunction} from '@aws-cdk/aws-lambda-nodejs';
 
+interface RavenStackProps extends StackProps {
+  stage: string;
+}
 
 export class RavenStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: cdk.Construct, id: string, props?: RavenStackProps) {
     super(scope, id, props);
 
-    const roomsTable = new RoomsTable(this, 'RoomsTable');
-    const messagesTable = new MessagesTable(this, 'MessagesTable');
+    const roomsTable = new RoomsTable(this, 'roomsTable');
+    const messagesTable = new MessagesTable(this, 'messagesTable');
 
 
     // Cognito
-    const ravenUserPool = new UserPool(this, 'RavenUserPool', {
+    const ravenUserPool = new UserPool(this, 'ravenUserPool', {
       selfSignUpEnabled: true,
-      signInAliases: {
-        username: true,
-      },
+      signInAliases: {username: true,},
+      autoVerify: {email: true},
+      userVerification: {
+        emailStyle: VerificationEmailStyle.CODE,
+        emailSubject: 'Raven Messenger - Verify your account',
+        emailBody: 'Hello, Your verification code is {####}',
+      }
     });
 
-    new CfnUserPoolGroup(this, 'AdminsGroup', {
+    new CfnUserPoolGroup(this, 'adminsGroup', {
       groupName: 'raven-admins',
       userPoolId: ravenUserPool.userPoolId,
 
     });
 
-    new CfnUserPoolGroup(this, 'UsersGroup', {
+    new CfnUserPoolGroup(this, 'usersGroup', {
       groupName: 'raven-users',
       userPoolId: ravenUserPool.userPoolId,
     });
 
-    const cfnUserPoolDomain = new CfnUserPoolDomain(this, 'RavenUserPoolCognitoDomain', {
+    const cfnUserPoolDomain = new CfnUserPoolDomain(this, 'ravenUserPoolCognitoDomain', {
       domain: 'raven-users-bmcandrews',
       userPoolId: ravenUserPool.userPoolId
     });
 
-    const ravenUserPoolClient = new CfnUserPoolClient(this, 'CognitoAppClient', {
+    const ravenUserPoolClient = new CfnUserPoolClient(this, 'cognitoAppClient', {
       supportedIdentityProviders: ['COGNITO'],
       clientName: 'Web',
       allowedOAuthFlowsUserPoolClient: true,
@@ -54,6 +63,16 @@ export class RavenStack extends cdk.Stack {
       userPoolId: ravenUserPool.userPoolId,
       preventUserExistenceErrors: 'ENABLED',
       generateSecret: false,
+    });
+
+    new CfnOutput(this, 'userPoolId', {
+      value: ravenUserPool.userPoolId,
+      description: 'User Pool ID',
+    });
+
+    new CfnOutput(this, 'userPoolWebClientId', {
+      value: ravenUserPoolClient.ref,
+      description: 'User Pool Web Client ID',
     });
 
 
@@ -69,14 +88,14 @@ export class RavenStack extends cdk.Stack {
     roomsTable.grantFullAccess(apiFunction);
     messagesTable.grantFullAccess(apiFunction);
 
-    const api = new LambdaRestApi(this, 'RavenApi', {
+    const api = new LambdaRestApi(this, 'ravenApi', {
       handler: apiFunction,
       proxy: false,
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS,
         allowMethods: Cors.ALL_METHODS,
         statusCode: 200,
-      }
+      },
     });
 
     const authorizer = new CfnAuthorizer(this, 'cfnAuth', {
@@ -109,19 +128,8 @@ export class RavenStack extends cdk.Stack {
     room.addMethod('DELETE', undefined, methodOptions);
 
     // /v1/rooms/{id}/messages
-    const  messages = room.addResource('messages');
+    const messages = room.addResource('messages');
     messages.addMethod('GET', undefined, methodOptions);
     messages.addMethod('POST', undefined, methodOptions);
-
-
-    // Websocket API
-    const websocketFunction = new NodejsFunction(this, 'websocketFunction', {
-      entry: 'functions/WebsocketFunction/handler.ts',
-      handler: 'handler',
-      environment: {
-        ROOMS_TABLE_NAME: roomsTable.tableName,
-        MESSAGES_TABLE_NAME: messagesTable.tableName,
-      }
-    });
   }
 }

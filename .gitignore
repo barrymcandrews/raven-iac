@@ -11,6 +11,12 @@ cdk.out
 # Keep Lambda Sub Project
 !lambda/*.js
 
+# Parcel Build
+.build
+
 # IDE Files
 .idea/
 .vscode/
+
+# macOS Files
+.DS_Store
