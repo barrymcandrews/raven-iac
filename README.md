@@ -1,9 +1,8 @@
-# Raven Messenger IaC
+# Raven Messenger - AWS Infrastructure
 
-This project contains the AWS infrastructure for my Raven Messenger Demo.
-#### Links
-* [React Frontend](https://github.com/barrymcandrews/raven-react)
-* [Live Demo](https://raven.bmcandrews.com)
+🖼️ [React Frontend](https://github.com/barrymcandrews/raven-react)
+
+🚀 [Live Demo](https://raven.bmcandrews.com)
 
 
 <!-- ABOUT THE PROJECT -->
