@@ -1,32 +1,61 @@
 import AWS from 'aws-sdk'
+import {APIGatewayProxyEvent, APIGatewayProxyResult} from 'aws-lambda';
+import Websocket from './websocket';
 
-export async function handler(event: any, context: any) {
+type Event = APIGatewayProxyEvent;
+type Result = Promise<APIGatewayProxyResult>;
+const websocket = new Websocket();
+const dynamodb = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: process.env.AWS_REGION });
+const CONNECTIONS_TABLE_NAME = process.env.CONNECTIONS_TABLE_NAME!;
 
-  const route = event.requestContext.routeKey;
-  console.log('ROUTE: ' + route);
+interface RouteMap {
+  [key: string]: (e: Event) => Result;
+}
 
-  const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-    apiVersion: '2018-11-29',
-    endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
-  });
+// Route: $connect
+async function connect(event: Event): Result {
+  console.log(JSON.stringify(event.requestContext))
+  // await dynamodb.put({
+  //     TableName: CONNECTIONS_TABLE_NAME,
+  //     Item: {
+  //       connectionId: event.requestContext.connectionId
+  //     }
+  //   }).promise()
+  return {statusCode: 200, body: 'Connected.'}
+}
 
-  async function send(connectionId: string, data: any) {
-    await apigwManagementApi.postToConnection({ ConnectionId: connectionId, Data: `Echo: ${data}` }).promise();
+// Route: $disconnect
+async function disconnect(event: Event): Result {
+  // await dynamodb.delete({
+  //   TableName: CONNECTIONS_TABLE_NAME,
+  //   Key: {
+  //     connectionId: event.requestContext.connectionId
+  //   }
+  // }).promise();
+  return {statusCode: 200, body: 'Disconnected.'}
+}
+
+// Route: message
+async function message(event: Event): Result {
+  return {statusCode: 200, body: 'Message sent.'}
+}
+
+export async function handler(event: Event): Result {
+  websocket.init(event);
+
+  const routeMap: RouteMap = {
+    '$connect': connect,
+    '$disconnect': disconnect,
+    'send': message,
+    '$default': (async () => {return  {statusCode: 200, body: 'Ok.'}}),
   }
 
-  if (route === 'send') {
-    const connectionId = event.requestContext.connectionId;
-    const data = JSON.parse(event.body).body;
-    console.log(event.body);
-
-      await send(connectionId, data);
-    return {statusCode: 200, body: 'Data sent.'};
-  } else if (route === '$connect') {
-    return {statusCode: 200, body: 'Connected.'};
-  } else if (route === '$disconnect') {
-    return {statusCode: 200, body: 'Disconnected.'};
-  } else {
-    console.log('Unhandled route.');
-    return {statusCode: 500, body: 'Unhandled route.'};
+  try {
+    const route: string = event.requestContext.routeKey!;
+    console.log('ROUTE: ' + route);
+    return await routeMap[route](event);
+  } catch (error) {
+    console.log(error);
+    return {statusCode: 500, body: 'Internal Error'};
   }
 }

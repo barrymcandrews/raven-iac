@@ -10,6 +10,7 @@
     "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
-    "quotes": ["error", "single", {"avoidEscape": true}]
+    "quotes": ["error", "single", {"avoidEscape": true}],
+    "@typescript-eslint/no-non-null-assertion": "off"
   }
 }

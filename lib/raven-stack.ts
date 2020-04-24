@@ -1,6 +1,5 @@
 import * as cdk from '@aws-cdk/core';
 import {CfnOutput, StackProps} from '@aws-cdk/core';
-import {MessagesTable, RoomsTable} from './tables';
 import {
   CfnUserPoolClient,
   CfnUserPoolDomain,
@@ -10,18 +9,19 @@ import {
 } from '@aws-cdk/aws-cognito';
 import {AuthorizationType, CfnAuthorizer, Cors, LambdaRestApi, MethodOptions} from '@aws-cdk/aws-apigateway';
 import {NodejsFunction} from '@aws-cdk/aws-lambda-nodejs';
+import {RavenTablesStack} from './raven-tables-stack';
 
 interface RavenStackProps extends StackProps {
   stage: string;
+  tablesStack: RavenTablesStack;
 }
 
 export class RavenStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: RavenStackProps) {
+  constructor(scope: cdk.Construct, id: string, props: RavenStackProps) {
     super(scope, id, props);
 
-    const roomsTable = new RoomsTable(this, 'roomsTable');
-    const messagesTable = new MessagesTable(this, 'messagesTable');
-
+    const roomsTable = props.tablesStack.roomsTable;
+    const messagesTable = props.tablesStack.messagesTable;
 
     // Cognito
     const ravenUserPool = new UserPool(this, 'ravenUserPool', {
@@ -88,7 +88,8 @@ export class RavenStack extends cdk.Stack {
     roomsTable.grantFullAccess(apiFunction);
     messagesTable.grantFullAccess(apiFunction);
 
-    const api = new LambdaRestApi(this, 'ravenApi', {
+    const api = new LambdaRestApi(this, 'ravenRestApi', {
+      restApiName: `ravenRestApi-${props.stage}`,
       handler: apiFunction,
       proxy: false,
       defaultCorsPreflightOptions: {
