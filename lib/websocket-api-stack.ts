@@ -3,24 +3,30 @@ import {Aws, CfnOutput, StackProps} from '@aws-cdk/core';
 import {NodejsFunction} from '@aws-cdk/aws-lambda-nodejs';
 import {Effect, PolicyStatement, ServicePrincipal} from '@aws-cdk/aws-iam';
 import {CfnApi, CfnAuthorizer, CfnDeployment, CfnIntegration, CfnRoute, CfnStage} from '@aws-cdk/aws-apigatewayv2';
-import {RavenTablesStack} from './raven-tables-stack';
-import {RavenStack} from './raven-stack';
+import {TablesStack} from './tables-stack';
+import {CognitoStack} from './cognito-stack';
 
 interface RavenWebsocketStackProps extends StackProps {
   stage: string;
-  tablesStack: RavenTablesStack;
-  ravenStack: RavenStack;
+  tablesStack: TablesStack;
+  cognitoStack: CognitoStack;
 }
 
-export class RavenWebsocketStack extends cdk.Stack {
+export class WebsocketApiStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: RavenWebsocketStackProps) {
     super(scope, id, props);
 
-    const connectionsTable = props.tablesStack.connectionsTable
-    const roomsTable = props.tablesStack.roomsTable
+    // Imported Tables
+    const connectionsTable = props.tablesStack.connectionsTable;
+    const messagesTable = props.tablesStack.messagesTable;
+    const roomsTable = props.tablesStack.roomsTable;
+
+    // Imported Cognito Ids
+    const cognitoUserPoolId = props.cognitoStack.userPool.userPoolId;
+    const cognitoUserPoolClientId = props.cognitoStack.userPoolClient.ref;
 
     const websocketApi = new CfnApi(this, 'websocketApi', {
-      name: `ravenWebsocketApi-${props.stage}`,
+      name: `${Aws.STACK_NAME}-api`,
       protocolType: 'WEBSOCKET',
       routeSelectionExpression: '$request.body.action',
     });
@@ -31,6 +37,7 @@ export class RavenWebsocketStack extends cdk.Stack {
       sourceMaps: true,
       environment: {
         CONNECTIONS_TABLE_NAME: connectionsTable.tableName,
+        MESSAGES_TABLE_NAME: messagesTable.tableName,
       },
     });
     connectionsTable.grantFullAccess(websocketFunction);
@@ -48,9 +55,7 @@ export class RavenWebsocketStack extends cdk.Stack {
       integrationUri: `arn:aws:apigateway:${Aws.REGION}:lambda:path/2015-03-31/functions/${websocketFunction.functionArn}/invocations`
     });
 
-    const cognitoUserPoolId = props.ravenStack.userPool.userPoolId;
-    const cognitoUserPoolClientId = props.ravenStack.userPoolClient.ref;
-    const authorizerFunction = new NodejsFunction(this, 'websocketAuthorizerFunction', {
+    const authorizerFunction = new NodejsFunction(this, 'authorizerFunction', {
       entry: 'functions/AuthorizerFunction/handler.ts',
       handler: 'handler',
       sourceMaps: true,
@@ -63,9 +68,9 @@ export class RavenWebsocketStack extends cdk.Stack {
     authorizerFunction.grantInvoke(new ServicePrincipal('apigateway.amazonaws.com'));
     roomsTable.grantFullAccess(authorizerFunction);
 
-    const websocketAuthorizer = new CfnAuthorizer(this, 'websocketAuthorizer', {
+    const websocketAuthorizer = new CfnAuthorizer(this, 'authorizer', {
       apiId: websocketApi.ref,
-      name: 'websocketAuthorizer',
+      name: `${Aws.STACK_NAME}-authorizer`,
       authorizerType: 'REQUEST',
       identitySource: [
         'route.request.querystring.Authorizer',
@@ -117,7 +122,7 @@ export class RavenWebsocketStack extends cdk.Stack {
 
     const webocketStage = new CfnStage(this, 'webocketStage', {
       apiId: websocketApi.ref,
-      stageName: 'prod',
+      stageName: props.stage,
       description: 'Prod Stage',
       deploymentId: websocketDeployment.ref
     });

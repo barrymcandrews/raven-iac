@@ -1,29 +1,31 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
-import { RavenStack } from '../lib/raven-stack';
-import {RavenWebsocketStack} from '../lib/raven-websocket-stack';
-import {RavenTablesStack} from '../lib/raven-tables-stack';
+import {CognitoStack} from '../lib/cognito-stack';
+import {TablesStack} from '../lib/tables-stack';
+import {WebsocketApiStack} from '../lib/websocket-api-stack';
+import {RestApiStack} from '../lib/rest-api-stack';
 
 const app = new cdk.App();
+const stage = app.node.tryGetContext('stage')
 
-const tablesStack = new RavenTablesStack(app, 'ravenTablesStack-prod', {
-  env: {region: 'us-east-1'},
-  stage: 'prod',
+const tablesStack = new TablesStack(app, `raven-${stage}-tables`, {
+  env: {region: 'us-east-1'}
 })
 
-const ravenStack = new RavenStack(app, 'ravenStack-prod', {
+const cognitoStack = new CognitoStack(app, `raven-${stage}-cognito`, {
   env: {region: 'us-east-1'},
-  stage: 'prod',
-  tablesStack: tablesStack,
 });
-ravenStack.addDependency(tablesStack);
 
-const ravenWebsocketStack = new RavenWebsocketStack(app, 'ravenWebsocketStack-prod', {
+new RestApiStack(app, `raven-${stage}-rest`, {
   env: {region: 'us-east-1'},
-  stage: 'prod',
   tablesStack: tablesStack,
-  ravenStack: ravenStack,
+  cognitoStack: cognitoStack,
 });
-ravenWebsocketStack.addDependency(ravenStack);
-ravenWebsocketStack.addDependency(tablesStack);
+
+new WebsocketApiStack(app, `raven-${stage}-websocket`, {
+  env: {region: 'us-east-1'},
+  stage: stage,
+  tablesStack: tablesStack,
+  cognitoStack: cognitoStack,
+});
