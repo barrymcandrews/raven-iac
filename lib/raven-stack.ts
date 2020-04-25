@@ -1,5 +1,5 @@
 import * as cdk from '@aws-cdk/core';
-import {CfnOutput, StackProps} from '@aws-cdk/core';
+import {StackProps} from '@aws-cdk/core';
 import {
   CfnUserPoolClient,
   CfnUserPoolDomain,
@@ -17,6 +17,9 @@ interface RavenStackProps extends StackProps {
 }
 
 export class RavenStack extends cdk.Stack {
+  userPool: UserPool;
+  userPoolClient: CfnUserPoolClient;
+
   constructor(scope: cdk.Construct, id: string, props: RavenStackProps) {
     super(scope, id, props);
 
@@ -34,6 +37,7 @@ export class RavenStack extends cdk.Stack {
         emailBody: 'Hello, Your verification code is {####}',
       }
     });
+    this.userPool = ravenUserPool;
 
     new CfnUserPoolGroup(this, 'adminsGroup', {
       groupName: 'raven-admins',
@@ -64,16 +68,7 @@ export class RavenStack extends cdk.Stack {
       preventUserExistenceErrors: 'ENABLED',
       generateSecret: false,
     });
-
-    new CfnOutput(this, 'userPoolId', {
-      value: ravenUserPool.userPoolId,
-      description: 'User Pool ID',
-    });
-
-    new CfnOutput(this, 'userPoolWebClientId', {
-      value: ravenUserPoolClient.ref,
-      description: 'User Pool Web Client ID',
-    });
+    this.userPoolClient = ravenUserPoolClient;
 
 
     // Rest API

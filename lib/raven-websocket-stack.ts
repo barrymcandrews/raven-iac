@@ -4,10 +4,12 @@ import {NodejsFunction} from '@aws-cdk/aws-lambda-nodejs';
 import {Effect, PolicyStatement, ServicePrincipal} from '@aws-cdk/aws-iam';
 import {CfnApi, CfnAuthorizer, CfnDeployment, CfnIntegration, CfnRoute, CfnStage} from '@aws-cdk/aws-apigatewayv2';
 import {RavenTablesStack} from './raven-tables-stack';
+import {RavenStack} from './raven-stack';
 
 interface RavenWebsocketStackProps extends StackProps {
   stage: string;
   tablesStack: RavenTablesStack;
+  ravenStack: RavenStack;
 }
 
 export class RavenWebsocketStack extends cdk.Stack {
@@ -15,6 +17,7 @@ export class RavenWebsocketStack extends cdk.Stack {
     super(scope, id, props);
 
     const connectionsTable = props.tablesStack.connectionsTable
+    const roomsTable = props.tablesStack.roomsTable
 
     const websocketApi = new CfnApi(this, 'websocketApi', {
       name: `ravenWebsocketApi-${props.stage}`,
@@ -45,21 +48,29 @@ export class RavenWebsocketStack extends cdk.Stack {
       integrationUri: `arn:aws:apigateway:${Aws.REGION}:lambda:path/2015-03-31/functions/${websocketFunction.functionArn}/invocations`
     });
 
+    const cognitoUserPoolId = props.ravenStack.userPool.userPoolId;
+    const cognitoUserPoolClientId = props.ravenStack.userPoolClient.ref;
     const authorizerFunction = new NodejsFunction(this, 'websocketAuthorizerFunction', {
       entry: 'functions/AuthorizerFunction/handler.ts',
       handler: 'handler',
       sourceMaps: true,
       environment: {
-        COGNITO_POOL_ID: 'us-east-1_5Pjtpk3Ui'
+        COGNITO_POOL_ID: cognitoUserPoolId,
+        COGNITO_POOL_CLIENT_ID: cognitoUserPoolClientId,
+        ROOMS_TABLE_NAME: roomsTable.tableName,
       },
     });
     authorizerFunction.grantInvoke(new ServicePrincipal('apigateway.amazonaws.com'));
+    roomsTable.grantFullAccess(authorizerFunction);
 
     const websocketAuthorizer = new CfnAuthorizer(this, 'websocketAuthorizer', {
       apiId: websocketApi.ref,
       name: 'websocketAuthorizer',
       authorizerType: 'REQUEST',
-      identitySource: ['route.request.querystring.Authorizer'],
+      identitySource: [
+        'route.request.querystring.Authorizer',
+        'route.request.querystring.Room',
+      ],
       authorizerUri: `arn:aws:apigateway:${Aws.REGION}:lambda:path/2015-03-31/functions/${authorizerFunction.functionArn}/invocations`,
     });
 

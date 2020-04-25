@@ -1,18 +1,15 @@
-import {APIGatewayAuthorizerResult, Context} from "aws-lambda";
-import {APIGatewayAuthorizerResultContext} from "aws-lambda/common/api-gateway";
-import {APIGatewayRequestAuthorizerEvent} from "aws-lambda/trigger/api-gateway-authorizer";
+import {APIGatewayAuthorizerResult} from 'aws-lambda';
+import {APIGatewayAuthorizerResultContext} from 'aws-lambda/common/api-gateway';
+import {APIGatewayRequestAuthorizerEvent} from 'aws-lambda/trigger/api-gateway-authorizer';
+import {ClaimVerifyResult, verifyJwt} from './verify-jwt';
+import {verifyRoom, VerifyRoomResult} from './verify-room';
 
 type Event = APIGatewayRequestAuthorizerEvent
 type Result = Promise<APIGatewayAuthorizerResult>
 
-enum Effect {
-  ALLOW = 'ALLOW',
-  DENY = 'DENY'
-}
 
 interface GeneratorParams {
   principalId: string;
-  effect: Effect;
   methodArn: string;
   context?: APIGatewayAuthorizerResultContext;
 }
@@ -26,7 +23,7 @@ async function generateResult(params: GeneratorParams): Result {
         {
           Sid: 'AllowInvoke',
           Action: 'execute-api:Invoke',
-          Effect: params.effect,
+          Effect: 'ALLOW',
           Resource: params.methodArn,
         },
       ],
@@ -35,37 +32,26 @@ async function generateResult(params: GeneratorParams): Result {
   }
 }
 
-export async function handler(event: Event, context: Context): Result {
+export async function handler(event: Event): Result {
   const token = event.queryStringParameters!.Authorizer;
+  const room = event.queryStringParameters!.Room;
   console.log('TOKEN: ' + token);
-  // const result: ClaimVerifyResult = await verifyJwt(token);
+
+  const claimResult: ClaimVerifyResult = await verifyJwt(token);
+  console.log(JSON.stringify(claimResult));
+
+  const roomResult: VerifyRoomResult = await verifyRoom(room);
+
+  if (!claimResult.isValid || !roomResult.isValid) {
+    throw new Error('Unauthorized');
+  }
+
   return await generateResult({
-    principalId: 'me',
-    effect: Effect.ALLOW,
+    principalId: claimResult.userName,
     methodArn: event.methodArn,
     context: {
-      username: 'me'
+      username: claimResult.userName,
+      room: room,
     }
   });
 }
-
-  // if (result.isValid) {
-  //   return await generateResult({
-  //     principalId: result.userName,
-  //     effect: Effect.ALLOW,
-  //     methodArn: event.methodArn,
-  //     context: {
-  //       username: result.userName
-  //     }
-  //   });
-  // } else {
-  //   return await generateResult({
-  //     principalId: '$unknown',
-  //     effect: Effect.DENY,
-  //     methodArn: event.methodArn,
-  //     context: {
-  //       reason: result.error
-  //     }
-  //   });
-//   }
-// }

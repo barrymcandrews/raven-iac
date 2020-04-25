@@ -43,6 +43,7 @@ async function message(event: Event): Result {
 export async function handler(event: Event): Result {
   websocket.init(event);
 
+
   const routeMap: RouteMap = {
     '$connect': connect,
     '$disconnect': disconnect,

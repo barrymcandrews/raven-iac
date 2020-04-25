@@ -23,5 +23,7 @@ const ravenWebsocketStack = new RavenWebsocketStack(app, 'ravenWebsocketStack-pr
   env: {region: 'us-east-1'},
   stage: 'prod',
   tablesStack: tablesStack,
+  ravenStack: ravenStack,
 });
+ravenWebsocketStack.addDependency(ravenStack);
 ravenWebsocketStack.addDependency(tablesStack);
