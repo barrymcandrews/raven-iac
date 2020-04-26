@@ -35,6 +35,7 @@ export class RestApiStack extends cdk.Stack {
     messagesTable.grantFullAccess(apiFunction);
 
     const api = new LambdaRestApi(this, 'restApi', {
+      restApiName: `${Aws.STACK_NAME}-api`,
       handler: apiFunction,
       proxy: false,
       defaultCorsPreflightOptions: {

@@ -8,7 +8,9 @@ const dynamodb = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', reg
 
 export interface VerifyRoomResult {
   isValid: boolean;
-  error?: string;
+  roomName: string;
+  roomId: string;
+  error?: any;
 }
 
 export async function verifyRoom(roomName: string): Promise<VerifyRoomResult> {
@@ -24,9 +26,10 @@ export async function verifyRoom(roomName: string): Promise<VerifyRoomResult> {
       throw new Error('room does not exist');
     }
 
-    return {isValid: true};
+    console.log(`room ${roomName} verified`);
+    return {isValid: true, roomId: id, roomName: roomName};
   } catch (error) {
-    console.log('room error: ' + JSON.stringify(error));
-    return {isValid: false, error: error};
+    console.log(`room ${roomName} NOT verified: ${error.message}`);
+    return {isValid: false, roomId: '', roomName: '', error: error};
   }
 }

@@ -5,7 +5,6 @@ import {Room} from './models';
 
 const UUID_NAMESPACE = '031548bd-10e5-460f-89d4-915896e06f65';
 const ROOMS_TABLE_NAME = process.env.ROOMS_TABLE_NAME!;
-const MESSAGES_TABLE_NAME = process.env.MESSAGES_TABLE_NAME!;
 
 const endpoint = process.env.AWS_SAM_LOCAL ? 'http://localhost:8000' : undefined;
 
@@ -18,7 +17,6 @@ api.use((req, res, next) => {
 });
 
 api.get('/rooms', async (req) => {
-  console.log('hello');
   const result = await dynamoDB.scan({TableName: ROOMS_TABLE_NAME}).promise();
   return result.Items!.map(Room.fromItem);
 });

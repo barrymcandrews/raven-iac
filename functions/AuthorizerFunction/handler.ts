@@ -1,17 +1,16 @@
 import {APIGatewayAuthorizerResult} from 'aws-lambda';
-import {APIGatewayAuthorizerResultContext} from 'aws-lambda/common/api-gateway';
 import {APIGatewayRequestAuthorizerEvent} from 'aws-lambda/trigger/api-gateway-authorizer';
 import {ClaimVerifyResult, verifyJwt} from './verify-jwt';
 import {verifyRoom, VerifyRoomResult} from './verify-room';
+import {AuthorizerContext} from './authorizer-context';
 
 type Event = APIGatewayRequestAuthorizerEvent
 type Result = Promise<APIGatewayAuthorizerResult>
 
-
 interface GeneratorParams {
   principalId: string;
   methodArn: string;
-  context?: APIGatewayAuthorizerResultContext;
+  context: AuthorizerContext;
 }
 
 async function generateResult(params: GeneratorParams): Result {
@@ -51,7 +50,8 @@ export async function handler(event: Event): Result {
     methodArn: event.methodArn,
     context: {
       username: claimResult.userName,
-      room: room,
+      roomName: roomResult.roomName,
+      roomId: roomResult.roomId,
     }
   });
 }

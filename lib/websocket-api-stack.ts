@@ -41,6 +41,7 @@ export class WebsocketApiStack extends cdk.Stack {
       },
     });
     connectionsTable.grantFullAccess(websocketFunction);
+    messagesTable.grantFullAccess(websocketFunction);
     websocketFunction.grantInvoke(new ServicePrincipal('apigateway.amazonaws.com'));
     websocketFunction.addToRolePolicy(new PolicyStatement({
       effect: Effect.ALLOW,
@@ -98,7 +99,7 @@ export class WebsocketApiStack extends cdk.Stack {
 
     const messageRoute = new CfnRoute(this, 'messageRoute', {
       apiId: websocketApi.ref,
-      routeKey: 'send',
+      routeKey: 'message',
       authorizationType: 'NONE',
       operationName: 'MessageRoute',
       target: 'integrations/' + websocketIntegration.ref
