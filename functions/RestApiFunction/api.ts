@@ -2,6 +2,7 @@ import API from 'lambda-api';
 import {v5 as uuidv5} from 'uuid';
 import {Room} from './models';
 import AWS from 'aws-sdk';
+import {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from 'aws-lambda';
 
 const UUID_NAMESPACE = '031548bd-10e5-460f-89d4-915896e06f65';
 const ROOMS_TABLE_NAME = process.env.ROOMS_TABLE_NAME!;
@@ -57,7 +58,8 @@ api.get('/rooms/:name', async (req) => {
 });
 
 api.delete('/rooms/:name', async (req) => {
-  const id = uuidv5(req.params.name!, UUID_NAMESPACE);
+  const name = decodeURIComponent(req.params.name!);
+  const id = uuidv5(name, UUID_NAMESPACE);
   try {
     await dynamodb.delete({
       TableName: ROOMS_TABLE_NAME,
@@ -70,19 +72,48 @@ api.delete('/rooms/:name', async (req) => {
 });
 
 api.get('/rooms/:name/messages', async (req) => {
-  const id = uuidv5(req.params.name!, UUID_NAMESPACE);
-  const limit = Number(req.query.limit || 20) || 20;
-  return await dynamodb.query({
-    TableName: MESSAGES_TABLE_NAME,
-    KeyConditionExpression : 'roomId = :rid',
-    ExpressionAttributeValues : {
-      ':rid' : id,
-    },
-    ScanIndexForward: false,
-    Limit: limit,
-  }).promise();
+  try {
+    const name = decodeURIComponent(req.params.name!);
+    const id = uuidv5(name, UUID_NAMESPACE);
+    console.log(req);
+
+    const limit = Number(req.query.limit || 20) || 20;
+    const before = ('before' in req.query) ? Number(req.query.before) : Date.now();
+    const after = ('after' in req.query) ? Number(req.query.after) : 0;
+
+    console.log('Params: ' + JSON.stringify({
+      rid: id,
+      before: before,
+      after: after,
+      limit: limit
+    }));
+
+    const resp = await dynamodb.query({
+      TableName: MESSAGES_TABLE_NAME,
+      KeyConditionExpression: 'roomId = :rid and timeSent BETWEEN :after AND :before',
+      ExpressionAttributeValues: {
+        ':rid': id,
+        ':after': after,
+        ':before': before,
+      },
+      ScanIndexForward: false,
+      Limit: limit,
+    }).promise();
+
+    return {
+      items: resp.Items!.map(m => {
+        delete m['roomId'];
+        m['roomName'] = name;
+        return m;
+      }),
+      count: resp.Count,
+    }
+  } catch (e) {
+    console.log(e);
+    return e;
+  }
 });
 
-export async function handler(event: any, context: any){
+export async function handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
   return await api.run(event, context);
 }
