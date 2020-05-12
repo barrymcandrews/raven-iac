@@ -82,6 +82,7 @@ async function sendMessage(props: SendMessageProps): Promise<void> {
       timeSent: props.timeSent,
       sender: props.sender,
       message: props.message,
+      action: props.action,
     },
     ConditionExpression: 'attribute_not_exists(roomId) AND attribute_not_exists(timeSent)'
   }).promise();
@@ -96,7 +97,7 @@ async function connect(event: Event): Result {
     action: Action.CONNECT,
     roomId: event.requestContext.authorizer.roomId,
     roomName: event.requestContext.authorizer.roomName,
-    message: `${username} has joined the server.`,
+    message: `${username} has joined the chat.`,
     sender:  '$server',
     timeSent: Date.now(),
   });
@@ -129,7 +130,7 @@ async function disconnect(event: Event): Result {
     action: Action.DISCONNECT,
     roomId: event.requestContext.authorizer.roomId,
     roomName: event.requestContext.authorizer.roomName,
-    message: `${username} has left the server.`,
+    message: `${username} has left the chat.`,
     sender:  '$server',
     timeSent: Date.now(),
   });
