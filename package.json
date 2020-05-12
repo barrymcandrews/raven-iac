@@ -12,9 +12,9 @@
     "lint": "tsc --noEmit && eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
   "devDependencies": {
-    "@aws-cdk/assert": "^1.35.0",
-    "@aws-cdk/cx-api": "^1.35.0",
-    "@aws-cdk/region-info": "^1.35.0",
+    "@aws-cdk/assert": "^1.38.0",
+    "@aws-cdk/cx-api": "^1.38.0",
+    "@aws-cdk/region-info": "^1.38.0",
     "@types/aws-lambda": "^8.10.51",
     "@types/jest": "^24.0.22",
     "@types/node": "10.17.5",
@@ -28,13 +28,13 @@
     "typescript": "~3.7.2"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigateway": "^1.35.0",
-    "@aws-cdk/aws-apigatewayv2": "^1.35.0",
-    "@aws-cdk/aws-cognito": "^1.35.0",
-    "@aws-cdk/aws-dynamodb": "^1.35.0",
-    "@aws-cdk/aws-lambda-nodejs": "^1.35.0",
-    "@aws-cdk/aws-s3": "^1.35.0",
-    "@aws-cdk/core": "^1.35.0",
+    "@aws-cdk/aws-apigateway": "^1.38.0",
+    "@aws-cdk/aws-apigatewayv2": "^1.38.0",
+    "@aws-cdk/aws-cognito": "^1.38.0",
+    "@aws-cdk/aws-dynamodb": "^1.38.0",
+    "@aws-cdk/aws-lambda-nodejs": "^1.38.0",
+    "@aws-cdk/aws-s3": "^1.38.0",
+    "@aws-cdk/core": "^1.38.0",
     "@aws/dynamodb-data-mapper": "^0.7.3",
     "@aws/dynamodb-data-mapper-annotations": "^0.7.3",
     "@types/jsonwebtoken": "^8.3.9",
