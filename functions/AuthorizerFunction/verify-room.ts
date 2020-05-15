@@ -26,6 +26,10 @@ export async function verifyRoom(roomName: string): Promise<VerifyRoomResult> {
       throw new Error('room does not exist');
     }
 
+    if (data.Item!.status !== 'ready') {
+      throw new Error('Room is not in a ready state');
+    }
+
     console.log(`room ${roomName} verified`);
     return {isValid: true, roomId: id, roomName: roomName};
   } catch (error) {

@@ -3,6 +3,9 @@ import {v5 as uuidv5} from 'uuid';
 import {Room} from './models';
 import AWS from 'aws-sdk';
 import {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from 'aws-lambda';
+import {DocumentClient} from 'aws-sdk/lib/dynamodb/document_client';
+import BatchWriteItemInput = DocumentClient.BatchWriteItemInput;
+import QueryOutput = DocumentClient.QueryOutput;
 
 const UUID_NAMESPACE = '031548bd-10e5-460f-89d4-915896e06f65';
 const ROOMS_TABLE_NAME = process.env.ROOMS_TABLE_NAME!;
@@ -18,14 +21,21 @@ api.use((req, res, next) => {
 
 api.get('/rooms', async (req) => {
   const result = await dynamodb.scan({TableName: ROOMS_TABLE_NAME}).promise();
-  return result.Items!;
+  const requester = req.requestContext.authorizer!.claims['cognito:username']
+  return result.Items!.map(room => {
+    return {
+      ...room,
+      canDelete: requester === room.creator,
+    }
+  });
 });
 
 api.post('/rooms', async (req, resp) => {
   const room: Room = {
     name: req.body.name,
     id: uuidv5(req.body.name, UUID_NAMESPACE),
-    creator: req.requestContext.authorizer!.claims['cognito:username']
+    creator: req.requestContext.authorizer!.claims['cognito:username'],
+    status: 'ready'
   };
 
   try {
@@ -60,13 +70,64 @@ api.get('/rooms/:name', async (req) => {
 api.delete('/rooms/:name', async (req) => {
   const name = decodeURIComponent(req.params.name!);
   const id = uuidv5(name, UUID_NAMESPACE);
+
   try {
+    await dynamodb.update({
+      TableName: ROOMS_TABLE_NAME,
+      Key: {id: id},
+      UpdateExpression: 'set #st = :s',
+      ExpressionAttributeNames: {
+        '#st': 'status'
+      },
+      ExpressionAttributeValues: {
+        ':s': 'deleting'
+      }
+    }).promise();
+
+
+    console.log(`Starting delete for: ${name}`);
+
+    let lastEvaluatedKey = undefined;
+    do {
+      const queryResult: QueryOutput = await dynamodb.query({
+        TableName: MESSAGES_TABLE_NAME,
+        KeyConditionExpression: 'roomId = :rid',
+        ExclusiveStartKey: lastEvaluatedKey,
+        ExpressionAttributeValues: {
+          ':rid': id,
+        },
+        Limit: 25,
+      }).promise();
+      lastEvaluatedKey = queryResult.LastEvaluatedKey;
+
+      if (queryResult.Count! > 0) {
+        const params: BatchWriteItemInput = {RequestItems: {}};
+        params.RequestItems[MESSAGES_TABLE_NAME] = [];
+        queryResult.Items!.forEach(item => {
+          params.RequestItems[MESSAGES_TABLE_NAME].push({
+            DeleteRequest: {
+              Key: {
+                roomId: id,
+                timeSent: item['timeSent'],
+              }
+            }
+          })
+        });
+        await dynamodb.batchWrite(params).promise();
+      }
+
+    } while (lastEvaluatedKey);
+
+    console.log(`Deleting room: ${name}`);
     await dynamodb.delete({
       TableName: ROOMS_TABLE_NAME,
       Key: {id: id},
     }).promise();
+    console.log(`Delete complete for: ${name}`);
+
     return {status: 'deleted'}
   } catch (e) {
+    console.log(e);
     return e
   }
 });
@@ -115,5 +176,12 @@ api.get('/rooms/:name/messages', async (req) => {
 });
 
 export async function handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
-  return await api.run(event, context);
+  console.log(`[${event.httpMethod}][${event.path}] Invocation started.`);
+  try {
+    return await api.run(event, context);
+  } catch (e) {
+    console.log(`[${event.httpMethod}][${event.path}] Invocation not successful.`)
+    console.log(e);
+    return e;
+  }
 }
