@@ -31,6 +31,8 @@ api.get('/rooms', async (req) => {
 });
 
 api.post('/rooms', async (req, resp) => {
+  if (req.body.name === '') return {status: 'Bad Request', code: 400};
+
   const room: Room = {
     name: req.body.name,
     id: uuidv5(req.body.name, UUID_NAMESPACE),
