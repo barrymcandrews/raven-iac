@@ -33,7 +33,8 @@ async function generateResult(params: GeneratorParams): Result {
 
 export async function handler(event: Event): Result {
   const token = event.queryStringParameters!.Authorizer;
-  const room = event.queryStringParameters!.Room;
+  const encodedRoom = event.queryStringParameters!.Room;
+  const room = decodeURIComponent(encodedRoom);
   console.log('TOKEN: ' + token);
 
   const claimResult: ClaimVerifyResult = await verifyJwt(token);
@@ -50,8 +51,8 @@ export async function handler(event: Event): Result {
     methodArn: event.methodArn,
     context: {
       username: claimResult.userName,
-      roomName: roomResult.roomName,
       roomId: roomResult.roomId,
+      encodedRoomName: encodeURIComponent(roomResult.roomName)
     }
   });
 }

@@ -93,10 +93,11 @@ async function sendMessage(props: SendMessageProps): Promise<void> {
 // Route: $connect
 async function connect(event: Event): Result {
   const username = event.requestContext.authorizer.username;
+  const roomName = decodeURIComponent(event.requestContext.authorizer.encodedRoomName);
   await sendMessage({
     action: Action.CONNECT,
     roomId: event.requestContext.authorizer.roomId,
-    roomName: event.requestContext.authorizer.roomName,
+    roomName: roomName,
     message: `${username} has joined the chat.`,
     sender:  '$server',
     timeSent: Date.now(),
@@ -118,6 +119,7 @@ async function connect(event: Event): Result {
 
 // Route: $disconnect
 async function disconnect(event: Event): Result {
+  const roomName = decodeURIComponent(event.requestContext.authorizer.encodedRoomName);
   await dynamodb.delete({
     TableName: CONNECTIONS_TABLE_NAME,
     Key: {
@@ -129,7 +131,7 @@ async function disconnect(event: Event): Result {
   await sendMessage({
     action: Action.DISCONNECT,
     roomId: event.requestContext.authorizer.roomId,
-    roomName: event.requestContext.authorizer.roomName,
+    roomName: roomName,
     message: `${username} has left the chat.`,
     sender:  '$server',
     timeSent: Date.now(),
@@ -140,6 +142,7 @@ async function disconnect(event: Event): Result {
 // Route: message
 async function message(event: Event): Result {
   const body: Body = JSON.parse(event.body!);
+  const roomName = decodeURIComponent(event.requestContext.authorizer.encodedRoomName);
 
   if (!('message' in body)) {
     throw new Error('Invalid body. Body must have \'message\' key.');
@@ -148,7 +151,7 @@ async function message(event: Event): Result {
   await sendMessage({
     action: Action.MESSAGE,
     roomId: event.requestContext.authorizer.roomId,
-    roomName: event.requestContext.authorizer.roomName,
+    roomName: roomName,
     message: body.message!,
     sender:  event.requestContext.authorizer.username,
     timeSent: Date.now(),
