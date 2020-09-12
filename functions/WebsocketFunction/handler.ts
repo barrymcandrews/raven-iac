@@ -33,6 +33,31 @@ interface SendMessageProps {
   sender: string;
 }
 
+async function saveInDynamoDB(props: SendMessageProps, attempts = 5): Promise<void> {
+  try {
+    await dynamodb.put({
+      TableName: MESSAGES_TABLE_NAME,
+      Item: {
+        roomId: props.roomId,
+        timeSent: props.timeSent,
+        sender: props.sender,
+        message: props.message,
+        action: props.action,
+      },
+      ConditionExpression: 'attribute_not_exists(roomId) AND attribute_not_exists(timeSent)'
+    }).promise();
+  } catch (e) {
+    if (attempts > 0) {
+      console.log('DynamoDB Put Failed. Trying again...');
+      props.timeSent = Date.now();
+      await saveInDynamoDB(props, attempts - 1);
+    } else {
+      throw e;
+    }
+  }
+}
+
+
 async function sendMessage(props: SendMessageProps): Promise<void> {
 
   const result: QueryOutput = await dynamodb.query({
@@ -52,7 +77,7 @@ async function sendMessage(props: SendMessageProps): Promise<void> {
     message: props.message,
   }
 
-  async function sendToConnection(item: AttributeMap): Promise<void> {
+  const sendToConnection = async (item: AttributeMap): Promise<void> => {
     try {
       await websocket.write(item.connectionId, data)
     } catch (error) {
@@ -69,26 +94,14 @@ async function sendMessage(props: SendMessageProps): Promise<void> {
         console.log('DELETE ERROR');
         console.log(error);
       }
-
     }
   }
 
   await Promise.all(result.Items!.map(sendToConnection));
-
-  await dynamodb.put({
-    TableName: MESSAGES_TABLE_NAME,
-    Item: {
-      roomId: props.roomId,
-      timeSent: props.timeSent,
-      sender: props.sender,
-      message: props.message,
-      action: props.action,
-    },
-    ConditionExpression: 'attribute_not_exists(roomId) AND attribute_not_exists(timeSent)'
-  }).promise();
-
+  await saveInDynamoDB(props);
   console.log(result);
 }
+
 
 // Route: $connect
 async function connect(event: Event): Result {
@@ -117,6 +130,7 @@ async function connect(event: Event): Result {
   return {statusCode: 200, body: 'Connected.'}
 }
 
+
 // Route: $disconnect
 async function disconnect(event: Event): Result {
   const roomName = decodeURIComponent(event.requestContext.authorizer.encodedRoomName);
@@ -139,6 +153,7 @@ async function disconnect(event: Event): Result {
   return {statusCode: 200, body: 'Disconnected.'}
 }
 
+
 // Route: message
 async function message(event: Event): Result {
   const body: Body = JSON.parse(event.body!);
@@ -154,11 +169,12 @@ async function message(event: Event): Result {
     roomName: roomName,
     message: body.message!,
     sender:  event.requestContext.authorizer.username,
-    timeSent: Date.now(),
+    timeSent: body.timeSent || Date.now(),
   });
 
   return {statusCode: 200, body: 'Messages sent.'}
 }
+
 
 export async function handler(event: Event): Result {
   websocket.init(event);
