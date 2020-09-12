@@ -1,6 +1,7 @@
 import * as cdk from '@aws-cdk/core';
 import {StackProps} from '@aws-cdk/core';
 import {
+  CfnUserPool,
   CfnUserPoolClient,
   CfnUserPoolDomain,
   CfnUserPoolGroup,
@@ -23,10 +24,17 @@ export class CognitoStack extends cdk.Stack {
       autoVerify: {email: true},
       userVerification: {
         emailStyle: VerificationEmailStyle.CODE,
-        emailSubject: 'Raven Messenger - Verify your account',
+        emailSubject: 'Please verify your account',
         emailBody: 'Hello, Your verification code is {####}',
       }
     });
+
+    const cfnUserPool = this.userPool.node.defaultChild as CfnUserPool;
+    cfnUserPool.emailConfiguration = {
+      emailSendingAccount: 'DEVELOPER',
+      from: 'Raven Messenger <raven-accounts@bmcandrews.com>',
+      sourceArn: `arn:aws:ses:us-east-1:${this.account}:identity/raven-accounts@bmcandrews.com`,
+    }
 
     new CfnUserPoolGroup(this, 'adminsGroup', {
       groupName: 'raven-admins',
