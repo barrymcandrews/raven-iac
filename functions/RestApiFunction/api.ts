@@ -61,12 +61,21 @@ api.post('/rooms', async (req, resp) => {
   }
 });
 
-api.get('/rooms/:name', async (req) => {
-    const id = uuidv5(req.params.name!, UUID_NAMESPACE);
-    return await dynamodb.get({
-      TableName: ROOMS_TABLE_NAME,
-      Key: {id: id},
-    }).promise();
+api.get('/rooms/:name', async (req, resp) => {
+  const id = uuidv5(req.params.name!, UUID_NAMESPACE);
+  const result = await dynamodb.get({
+    TableName: ROOMS_TABLE_NAME,
+    Key: {id: id},
+  }).promise();
+
+  if (Object.keys(result).length === 0) {
+    resp.status(404).send(JSON.stringify({
+      status: 'Not Found'
+    }));
+    return resp;
+  }
+
+  return result;
 });
 
 api.delete('/rooms/:name', async (req) => {
