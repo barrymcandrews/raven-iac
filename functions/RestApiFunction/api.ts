@@ -6,6 +6,7 @@ import {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from 'aws-lambda';
 import {DocumentClient} from 'aws-sdk/lib/dynamodb/document_client';
 import BatchWriteItemInput = DocumentClient.BatchWriteItemInput;
 import QueryOutput = DocumentClient.QueryOutput;
+import GetItemOutput = DocumentClient.GetItemOutput;
 
 const UUID_NAMESPACE = '031548bd-10e5-460f-89d4-915896e06f65';
 const ROOMS_TABLE_NAME = process.env.ROOMS_TABLE_NAME!;
@@ -64,7 +65,7 @@ api.post('/rooms', async (req, resp) => {
 api.get('/rooms/:name', async (req, resp) => {
   const name = decodeURIComponent(req.params.name!);
   const id = uuidv5(name, UUID_NAMESPACE);
-  const result = await dynamodb.get({
+  const result: GetItemOutput = await dynamodb.get({
     TableName: ROOMS_TABLE_NAME,
     Key: {id: id},
   }).promise();
@@ -76,7 +77,11 @@ api.get('/rooms/:name', async (req, resp) => {
     return resp;
   }
 
-  return result;
+  return {
+    creator: result.Item!['creator'],
+    name: result.Item!['name'],
+    status: result.Item!['status'],
+  };
 });
 
 api.delete('/rooms/:name', async (req) => {
