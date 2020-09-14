@@ -62,7 +62,8 @@ api.post('/rooms', async (req, resp) => {
 });
 
 api.get('/rooms/:name', async (req, resp) => {
-  const id = uuidv5(req.params.name!, UUID_NAMESPACE);
+  const name = decodeURIComponent(req.params.name!);
+  const id = uuidv5(name, UUID_NAMESPACE);
   const result = await dynamodb.get({
     TableName: ROOMS_TABLE_NAME,
     Key: {id: id},
