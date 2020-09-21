@@ -53,7 +53,7 @@ npm install
 <!-- ROADMAP -->
 ## Roadmap
 
-I've implemented all the features I planned for version one. Version 2 of this website will be re-skinned with a more modern design.
+I've implemented all the features I planned for version one of this project. As I develop new frontends, I'll add new features as I need them. 
 
 
 
