@@ -53,7 +53,7 @@ npm install
 <!-- ROADMAP -->
 ## Roadmap
 
-This project is not quite finished yet. I'll be updating it in the coming weeks as I finish the frontend.
+I've implemented all the features I planned for version one. Version 2 of this website will be re-skinned with a more modern design.
 
 
 
