@@ -13,10 +13,10 @@ export interface Body {
 export default class Websocket {
   apiGatewayManagementApi: ApiGatewayManagementApi;
 
-  init(event: APIGatewayProxyEvent): void {
+  constructor(endpoint: string) {
     this.apiGatewayManagementApi = new AWS.ApiGatewayManagementApi({
       apiVersion: '2018-11-29',
-      endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
+      endpoint: endpoint
     });
   }
 

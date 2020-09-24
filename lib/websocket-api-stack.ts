@@ -38,6 +38,7 @@ export class WebsocketApiStack extends cdk.Stack {
       environment: {
         CONNECTIONS_TABLE_NAME: connectionsTable.tableName,
         MESSAGES_TABLE_NAME: messagesTable.tableName,
+        ENDPOINT: websocketApi.ref + '.execute-api.' + Aws.REGION + '.amazonaws.com/' + props.stage,
       },
     });
     connectionsTable.grantFullAccess(websocketFunction);

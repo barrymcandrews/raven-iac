@@ -6,10 +6,11 @@ import {DocumentClient} from 'aws-sdk/lib/dynamodb/document_client';
 import QueryOutput = DocumentClient.QueryOutput;
 import AttributeMap = DocumentClient.AttributeMap;
 
-const websocket = new Websocket();
 const dynamodb = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: process.env.AWS_REGION });
 const CONNECTIONS_TABLE_NAME = process.env.CONNECTIONS_TABLE_NAME!;
 const MESSAGES_TABLE_NAME = process.env.MESSAGES_TABLE_NAME!;
+const ENDPOINT = process.env.ENDPOINT!;
+const websocket = new Websocket(ENDPOINT);
 
 type Event = APIGatewayProxyWithLambdaAuthorizerEvent<AuthorizerContext>;
 type Result = Promise<APIGatewayProxyResult>;
@@ -177,7 +178,6 @@ async function message(event: Event): Result {
 
 
 export async function handler(event: Event): Result {
-  websocket.init(event);
 
   const routeMap: RouteMap = {
     '$connect': connect,
