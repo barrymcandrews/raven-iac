@@ -4,10 +4,13 @@ import {AuthorizationType, CfnAuthorizer, Cors, LambdaRestApi, MethodOptions} fr
 import {NodejsFunction} from '@aws-cdk/aws-lambda-nodejs';
 import {TablesStack} from './tables-stack';
 import {CognitoStack} from './cognito-stack';
+import {WebsocketApiStack} from './websocket-api-stack';
+import {Effect, PolicyStatement, ServicePrincipal} from '@aws-cdk/aws-iam';
 
 interface RestApiStackProps extends StackProps {
   tablesStack: TablesStack;
   cognitoStack: CognitoStack;
+  websocketApiStack: WebsocketApiStack;
 }
 
 export class RestApiStack extends cdk.Stack {
@@ -18,9 +21,14 @@ export class RestApiStack extends cdk.Stack {
     // Imported Tables
     const roomsTable = props.tablesStack.roomsTable;
     const messagesTable = props.tablesStack.messagesTable;
+    const connectionsTable = props.tablesStack.connectionsTable;
 
     // Imported Cognito Constructs
     const cognitoUserPool = props.cognitoStack.userPool;
+
+    // Imported Websocket Api Constructs
+    const websocketApi = props.websocketApiStack.websocketApi;
+    const websocketApiEndpoint = props.websocketApiStack.websocketApiEndpoint;
 
     // Rest API
     const apiFunction = new NodejsFunction(this, 'apiFunction', {
@@ -29,10 +37,19 @@ export class RestApiStack extends cdk.Stack {
       environment: {
         ROOMS_TABLE_NAME: roomsTable.tableName,
         MESSAGES_TABLE_NAME: messagesTable.tableName,
+        WEBSOCKET_API_ENDPOINT: websocketApiEndpoint,
+        CONNECTIONS_TABLE_NAME: connectionsTable.tableName,
       }
     });
     roomsTable.grantFullAccess(apiFunction);
     messagesTable.grantFullAccess(apiFunction);
+    connectionsTable.grantFullAccess(apiFunction);
+    apiFunction.grantInvoke(new ServicePrincipal('apigateway.amazonaws.com'));
+    apiFunction.addToRolePolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['execute-api:ManageConnections'],
+      resources: [`arn:aws:execute-api:${Aws.REGION}:${Aws.ACCOUNT_ID}:${websocketApi.ref}/*`],
+    }));
 
     const api = new LambdaRestApi(this, 'restApi', {
       restApiName: `${Aws.STACK_NAME}-api`,

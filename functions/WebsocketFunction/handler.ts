@@ -9,7 +9,7 @@ import AttributeMap = DocumentClient.AttributeMap;
 const dynamodb = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: process.env.AWS_REGION });
 const CONNECTIONS_TABLE_NAME = process.env.CONNECTIONS_TABLE_NAME!;
 const MESSAGES_TABLE_NAME = process.env.MESSAGES_TABLE_NAME!;
-const ENDPOINT = process.env.ENDPOINT!;
+const ENDPOINT = process.env.WEBSOCKET_API_ENDPOINT!;
 const websocket = new Websocket(ENDPOINT);
 
 type Event = APIGatewayProxyWithLambdaAuthorizerEvent<AuthorizerContext>;
@@ -19,13 +19,13 @@ interface RouteMap {
   [key: string]: (e: Event) => Result;
 }
 
-enum Action {
+export enum Action {
   MESSAGE = 'message',
   CONNECT = '$connect',
   DISCONNECT = '$disconnect',
 }
 
-interface SendMessageProps {
+export interface SendMessageProps {
   action: Action;
   roomId: string;
   roomName: string;
@@ -59,7 +59,7 @@ async function saveInDynamoDB(props: SendMessageProps, attempts = 5): Promise<vo
 }
 
 
-async function sendMessage(props: SendMessageProps): Promise<void> {
+export async function sendMessage(props: SendMessageProps): Promise<void> {
 
   const result: QueryOutput = await dynamodb.query({
     TableName: CONNECTIONS_TABLE_NAME,

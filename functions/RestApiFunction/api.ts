@@ -7,6 +7,7 @@ import {DocumentClient} from 'aws-sdk/lib/dynamodb/document_client';
 import BatchWriteItemInput = DocumentClient.BatchWriteItemInput;
 import QueryOutput = DocumentClient.QueryOutput;
 import GetItemOutput = DocumentClient.GetItemOutput;
+import {Action, sendMessage} from '../WebsocketFunction/handler';
 
 const UUID_NAMESPACE = '031548bd-10e5-460f-89d4-915896e06f65';
 const ROOMS_TABLE_NAME = process.env.ROOMS_TABLE_NAME!;
@@ -189,6 +190,32 @@ api.get('/rooms/:name/messages', async (req) => {
   } catch (e) {
     console.log(e);
     return e;
+  }
+});
+
+api.post('/rooms/:name/messages', async (req, resp) => {
+  try {
+    const roomName = decodeURIComponent(req.params.name!);
+    const roomId = uuidv5(roomName, UUID_NAMESPACE);
+    console.log(req);
+
+    await sendMessage({
+      action: Action.MESSAGE,
+      roomId: roomId,
+      roomName: roomName,
+      message: req.body.message!,
+      sender:  req.requestContext.authorizer!.claims['cognito:username'],
+      timeSent: req.body.timeSent || Date.now(),
+    });
+
+    resp.sendStatus(200);
+
+  } catch (e) {
+    console.log('Error: ' + e.message);
+    resp.status(400).send(JSON.stringify({
+      code: 400,
+      message: 'Bad Request.'
+    }));
   }
 });
 

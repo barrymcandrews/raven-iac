@@ -17,15 +17,16 @@ const cognitoStack = new CognitoStack(app, `raven-${stage}-cognito`, {
   env: {region: 'us-east-1'},
 });
 
-new RestApiStack(app, `raven-${stage}-rest`, {
-  env: {region: 'us-east-1'},
-  tablesStack: tablesStack,
-  cognitoStack: cognitoStack,
-});
-
-new WebsocketApiStack(app, `raven-${stage}-websocket`, {
+const websocketApiStack = new WebsocketApiStack(app, `raven-${stage}-websocket`, {
   env: {region: 'us-east-1'},
   stage: stage,
   tablesStack: tablesStack,
   cognitoStack: cognitoStack,
+});
+
+new RestApiStack(app, `raven-${stage}-rest`, {
+  env: {region: 'us-east-1'},
+  tablesStack: tablesStack,
+  cognitoStack: cognitoStack,
+  websocketApiStack: websocketApiStack
 });

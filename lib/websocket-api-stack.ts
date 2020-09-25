@@ -13,6 +13,9 @@ interface RavenWebsocketStackProps extends StackProps {
 }
 
 export class WebsocketApiStack extends cdk.Stack {
+  websocketApi: CfnApi
+  websocketApiEndpoint: string
+
   constructor(scope: cdk.Construct, id: string, props: RavenWebsocketStackProps) {
     super(scope, id, props);
 
@@ -25,11 +28,12 @@ export class WebsocketApiStack extends cdk.Stack {
     const cognitoUserPoolId = props.cognitoStack.userPool.userPoolId;
     const cognitoUserPoolClientId = props.cognitoStack.userPoolClient.ref;
 
-    const websocketApi = new CfnApi(this, 'websocketApi', {
+    this.websocketApi = new CfnApi(this, 'websocketApi', {
       name: `${Aws.STACK_NAME}-api`,
       protocolType: 'WEBSOCKET',
       routeSelectionExpression: '$request.body.action',
     });
+    this.websocketApiEndpoint = this.websocketApi.ref + '.execute-api.' + Aws.REGION + '.amazonaws.com/' + props.stage;
 
     const websocketFunction = new NodejsFunction(this, 'websocketFunction', {
       entry: 'functions/WebsocketFunction/handler.ts',
@@ -38,7 +42,7 @@ export class WebsocketApiStack extends cdk.Stack {
       environment: {
         CONNECTIONS_TABLE_NAME: connectionsTable.tableName,
         MESSAGES_TABLE_NAME: messagesTable.tableName,
-        ENDPOINT: websocketApi.ref + '.execute-api.' + Aws.REGION + '.amazonaws.com/' + props.stage,
+        WEBSOCKET_API_ENDPOINT: this.websocketApiEndpoint,
       },
     });
     connectionsTable.grantFullAccess(websocketFunction);
@@ -47,11 +51,11 @@ export class WebsocketApiStack extends cdk.Stack {
     websocketFunction.addToRolePolicy(new PolicyStatement({
       effect: Effect.ALLOW,
       actions: ['execute-api:ManageConnections'],
-      resources: [`arn:aws:execute-api:${Aws.REGION}:${Aws.ACCOUNT_ID}:${websocketApi.ref}/*`],
+      resources: [`arn:aws:execute-api:${Aws.REGION}:${Aws.ACCOUNT_ID}:${this.websocketApi.ref}/*`],
     }));
 
     const websocketIntegration = new CfnIntegration(this, 'connectIntegration', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       description: 'Connect Integration',
       integrationType: 'AWS_PROXY',
       integrationUri: `arn:aws:apigateway:${Aws.REGION}:lambda:path/2015-03-31/functions/${websocketFunction.functionArn}/invocations`
@@ -71,7 +75,7 @@ export class WebsocketApiStack extends cdk.Stack {
     roomsTable.grantFullAccess(authorizerFunction);
 
     const websocketAuthorizer = new CfnAuthorizer(this, 'authorizer', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       name: `${Aws.STACK_NAME}-authorizer`,
       authorizerType: 'REQUEST',
       identitySource: [
@@ -82,7 +86,7 @@ export class WebsocketApiStack extends cdk.Stack {
     });
 
     const connectRoute = new CfnRoute(this, 'connectRoute', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       routeKey: '$connect',
       authorizationType: 'CUSTOM',
       operationName: 'ConnectRoute',
@@ -91,7 +95,7 @@ export class WebsocketApiStack extends cdk.Stack {
     });
 
     const disconnectRoute = new CfnRoute(this, 'disconnectRoute', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       routeKey: '$disconnect',
       authorizationType: 'NONE',
       operationName: 'DisconnectRoute',
@@ -99,7 +103,7 @@ export class WebsocketApiStack extends cdk.Stack {
     });
 
     const messageRoute = new CfnRoute(this, 'messageRoute', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       routeKey: 'message',
       authorizationType: 'NONE',
       operationName: 'MessageRoute',
@@ -107,7 +111,7 @@ export class WebsocketApiStack extends cdk.Stack {
     });
 
     const defaultRoute = new CfnRoute(this, 'defaultRoute', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       routeKey: '$default',
       authorizationType: 'NONE',
       operationName: 'DefaultRoute',
@@ -115,7 +119,7 @@ export class WebsocketApiStack extends cdk.Stack {
     });
 
     const websocketDeployment = new CfnDeployment(this, 'websocketDeployment', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
     });
     websocketDeployment.addDependsOn(connectRoute);
     websocketDeployment.addDependsOn(disconnectRoute);
@@ -123,14 +127,14 @@ export class WebsocketApiStack extends cdk.Stack {
     websocketDeployment.addDependsOn(defaultRoute);
 
     const webocketStage = new CfnStage(this, 'webocketStage', {
-      apiId: websocketApi.ref,
+      apiId: this.websocketApi.ref,
       stageName: props.stage,
       description: 'Prod Stage',
       deploymentId: websocketDeployment.ref
     });
 
     new CfnOutput(this, 'websocketUriOutput', {
-      value: 'wss://' + websocketApi.ref + '.execute-api.' + Aws.REGION + '.amazonaws.com/' + webocketStage.ref,
+      value: 'wss://' + this.websocketApi.ref + '.execute-api.' + Aws.REGION + '.amazonaws.com/' + webocketStage.ref,
       description: 'ApiGatewayWebsocket URL'
     });
   }
