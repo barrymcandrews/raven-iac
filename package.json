@@ -46,7 +46,7 @@
     "aws-apigatewaymanagementapi": "^0.1.0",
     "aws-lambda-router": "^0.8.2",
     "aws-sdk": "^2.660.0",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "dynamoose": "^1.11.1",
     "jsonwebtoken": "^8.5.1",
     "jwk-to-pem": "^2.0.3",
