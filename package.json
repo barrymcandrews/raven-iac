@@ -45,7 +45,7 @@
     "acorn": "^7.1.1",
     "aws-apigatewaymanagementapi": "^0.1.0",
     "aws-lambda-router": "^0.8.2",
-    "aws-sdk": "^2.660.0",
+    "aws-sdk": "^2.814.0",
     "axios": "^0.19.2",
     "dynamoose": "^1.11.1",
     "jsonwebtoken": "^8.5.1",
