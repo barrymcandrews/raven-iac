@@ -48,7 +48,7 @@
     "aws-sdk": "^2.660.0",
     "axios": "^0.19.2",
     "dynamoose": "^1.11.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "jwk-to-pem": "^2.0.3",
     "lambda-api": "^0.10.5",
     "node-fetch": "^2.6.1",
